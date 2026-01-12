@@ -74,3 +74,13 @@ int vector_destroy(vector* vec) {
     vec->capacity = 0;
     return VECTOR_SUCCESS;
 }
+
+void* vector_at(const vector* vec, size_t pos){
+    assert(vec != NULL && vec->size > pos);
+
+    if(vec == NULL || vec->size <= pos){
+        return NULL;
+    }
+
+    return vec->data + pos*vec->element_size;
+} 
