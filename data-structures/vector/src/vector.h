@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #define VECTOR_SUCCESS 0
 #define VECTOR_FAILURE -1
@@ -30,3 +31,19 @@ int vector_clear(vector* vec);
  *  function throws out_of_range if the check fails.
  */
 void* vector_at(const vector* vec, size_t n);
+
+/**
+ *  @brief  Assigns a given value to a %vector.
+ *  @param  n  Number of elements to be assigned.
+ *  @param  val  Value to be assigned.
+ *
+ *  This function fills a %vector with @a n copies of the given
+ *  value.  Note that the assignment completely changes the
+ *  %vector and that the resulting %vector's size is the same as
+ *  the number of elements assigned.
+ */
+void vector_assign(vector* vec, size_t n, void* val);
+
+void* vector_front();
+void* vector_back();
+void* vector_data();

@@ -36,7 +36,6 @@ int vector_push_back(vector* vec, void* element){
         if(!new_data){
             return VECTOR_FAILURE;
         }
-        memset(new_data, 0, new_capacity * vec->element_size);
         vec->data = new_data;
         vec->capacity = new_capacity;
     }
@@ -83,4 +82,44 @@ void* vector_at(const vector* vec, size_t pos){
     }
 
     return vec->data + pos*vec->element_size;
-} 
+}
+
+void vector_assign(vector* vec, size_t n, void* val) {
+    assert(vec != NULL && val != NULL);
+
+    if(vec == NULL || val == NULL)
+        return;
+    
+    // In case size of assign requirement is greater current capacity
+    if(vec->capacity < n){
+        void *new_data = realloc(vec->data, n*vec->element_size);
+        if(new_data == NULL){
+            return;
+        }
+
+        memset(new_data, *(int *)val, n*vec->element_size);
+        vec->data = new_data;
+        vec->capacity = n;
+        vec->size = n;
+        return;
+    }
+
+    // In case size of assign requirement is smaller or equal current capacity
+    void* pos = vec->data;
+    for(int i = 0; i < n; ++i){
+        memcpy(pos, val, vec->element_size);
+        pos += vec->element_size;
+    }
+}
+
+void* vector_front(vector* vec) {
+    return vec->data;
+}
+
+void* vector_back(vector* vec) {
+    return vec->data + (vec->element_size*vec->size);
+}
+
+void* vector_data(vector* vec) {
+    return vec->data;
+}
