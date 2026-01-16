@@ -13,6 +13,11 @@ typedef struct {
     size_t element_size;
 } vector;
 
+typedef struct {
+    size_t element_size;
+    void *ptr;
+} iterator;
+
 int vector_create(vector* vec, size_t capacity, size_t element_size);
 int vector_destroy(vector* vec);
 int vector_push_back(vector* vec, void* element);
@@ -47,3 +52,7 @@ void vector_assign(vector* vec, size_t n, void* val);
 void* vector_front();
 void* vector_back();
 void* vector_data();
+
+iterator vector_iterator(vector* vec, int idx);
+iterator vector_begin(vector* vec);
+iterator vector_end(vector* vec);

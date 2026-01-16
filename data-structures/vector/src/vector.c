@@ -123,3 +123,28 @@ void* vector_back(vector* vec) {
 void* vector_data(vector* vec) {
     return vec->data;
 }
+
+iterator vector_iterator(vector* vec, int idx){
+    iterator ret = {NULL, 0};
+
+    assert(vec != NULL);
+    assert(vec->data != NULL);
+    assert(idx < vec->size);
+    
+    if(vec == NULL) return ret;
+    if(vec->data == NULL) return ret;
+    if(idx < vec->size) return ret;
+ 
+    ret.element_size = vec->element_size;
+    ret.ptr = vec->data + idx*vec->element_size;
+
+    return ret;
+}
+
+iterator vector_begin(vector* vec){
+    return vector_iterator(vec, 0);
+}
+
+iterator vector_end(vector* vec){
+    return vector_iterator(vec, vec->size);
+}
