@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define VECTOR_SUCCESS 0
 #define VECTOR_FAILURE -1
@@ -47,12 +48,17 @@ void* vector_at(const vector* vec, size_t n);
  *  %vector and that the resulting %vector's size is the same as
  *  the number of elements assigned.
  */
-void vector_assign(vector* vec, size_t n, void* val);
-
-void* vector_front();
-void* vector_back();
-void* vector_data();
+int vector_assign(vector* vec, size_t n, void* val);
+void* vector_front(vector* vec);
+void* vector_back(vector* vec);
+void* vector_data(vector* vec);
+bool vector_empty(vector* vec);
+size_t vector_size(vector* vec);
+int vector_resize(vector* vec, size_t new_size, void* val);
+int vector_swap(vector* vec1, vector* vec2);
 
 iterator vector_iterator(vector* vec, int idx);
 iterator vector_begin(vector* vec);
 iterator vector_end(vector* vec);
+iterator vector_emplace(vector* vec, const iterator it, void* val);
+iterator vector_emplace_back(vector* vec, void* val);

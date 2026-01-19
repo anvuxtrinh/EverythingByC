@@ -167,7 +167,7 @@ void* vector_front(vector* vec) {
 }
 
 void* vector_back(vector* vec) {
-    return vec->data + (vec->element_size*vec->size);
+    return vector_at(vec, vec->size);
 }
 
 void* vector_data(vector* vec) {
@@ -180,7 +180,7 @@ int vector_shrink_to_fit(vector* vec){
     if(vec == NULL) return VECTOR_FAILURE;
 
     if(__should_shrink(vec)){
-        if(__vector_realloc(vec, vec->size) == VECTOR_FAILURE){
+        if(__realloc(vec, vec->size) == VECTOR_FAILURE){
             return VECTOR_FAILURE;
         }
     }
@@ -212,3 +212,34 @@ iterator vector_begin(vector* vec){
 iterator vector_end(vector* vec){
     return vector_iterator(vec, vec->size);
 }
+
+bool vector_empty(vector* vec){
+    return vec->size == 0;
+}
+
+size_t vector_size(vector* vec){
+    return vec->size;
+}
+
+int vector_resize(vector* vec, size_t new_size, void* val){
+    assert(vec != NULL);
+
+    if(vec != NULL) return VECTOR_FAILURE;
+
+    int __old = vec->size;
+    vec->size = new_size;
+
+    if(new_size > vec->capacity){
+        __realloc(vec, new_size);
+    }
+
+    if(val != NULL){
+        void* __end = vector_at(vec, __old);
+        for(int i = 0; i < new_size - __old; ++i){
+            memset(__end + i, *(int *)val, vec->element_size);
+        }
+    }
+
+    return VECTOR_SUCCESS;
+}
+
