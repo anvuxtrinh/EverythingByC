@@ -1,6 +1,63 @@
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 #include "vector.h"
+
+int __realloc(vector* vec, size_t new_size){
+    assert(vec != NULL);
+
+    if(vec == NULL) return VECTOR_FAILURE;
+
+    void* new_data = realloc(vec->data, new_size * vec->element_size);
+    if(new_data == NULL){
+        return VECTOR_FAILURE;
+    }
+
+    vec->data = new_data;
+    vec->capacity = new_size;
+
+    return VECTOR_SUCCESS;
+}
+
+bool __should_grow(vector* vec){
+    assert(vec != NULL);
+
+    if(vec == NULL) return false;
+
+    return vec->size >= vec->capacity;
+}
+
+bool __should_shrink(vector* vec){
+    assert(vec != NULL);
+
+    if(vec == NULL) return false;
+
+    return vec->size < vec->capacity;
+}
+
+int __adjust_capacity(vector* vec){
+    assert(vec != NULL);
+
+    if(vec == NULL) return VECTOR_FAILURE;
+
+    if(__realloc(vec, vec->capacity * 2) == VECTOR_FAILURE){
+        return VECTOR_FAILURE;
+    }
+
+    return VECTOR_SUCCESS;
+}
+
+int __update_element(vector* vec, size_t idx, void* value){
+    assert(vec != NULL);
+    assert(value != NULL);
+
+    if(vec == NULL) return VECTOR_FAILURE;
+    if(value == NULL) return VECTOR_FAILURE;
+
+    void* dict = vector_at(vec, idx);
+    memcpy(dict, value, vec->element_size);
+    return VECTOR_SUCCESS;
+}
 
 int vector_create(vector* vec, size_t capacity, size_t element_size) {
     assert(vec != NULL);
@@ -30,18 +87,14 @@ int vector_push_back(vector* vec, void* element){
     }
 
     //If the size exceeds capacity, reallocate memory
-    if(vec->size >= vec->capacity){
-        size_t new_capacity = vec->capacity * 2;
-        void* new_data = realloc(vec->data, new_capacity*vec->element_size);
-        if(!new_data){
+    if(__should_grow(vec)){
+        if(__adjust_capacity(vec) == VECTOR_FAILURE){
             return VECTOR_FAILURE;
         }
-        vec->data = new_data;
-        vec->capacity = new_capacity;
     }
 
     //Copy the element to the end of the vector
-    memcpy(vec->data + vec->element_size * vec->size, element, vec->element_size);
+    __update_element(vec, vec->size, element);
     ++vec->size;
     return VECTOR_SUCCESS;
 }
@@ -84,32 +137,29 @@ void* vector_at(const vector* vec, size_t pos){
     return vec->data + pos*vec->element_size;
 }
 
-void vector_assign(vector* vec, size_t n, void* val) {
-    assert(vec != NULL && val != NULL);
+int vector_assign(vector* vec, size_t n, void* val) {
+    assert(vec != NULL);
+    assert(val != NULL);
 
-    if(vec == NULL || val == NULL)
-        return;
+    if(vec == NULL) return VECTOR_FAILURE;
+    if(val == NULL) return VECTOR_FAILURE;
     
     // In case size of assign requirement is greater current capacity
     if(vec->capacity < n){
-        void *new_data = realloc(vec->data, n*vec->element_size);
-        if(new_data == NULL){
-            return;
+        if(__realloc(vec, n) == VECTOR_FAILURE){
+            return VECTOR_FAILURE;
         }
-
-        memset(new_data, *(int *)val, n*vec->element_size);
-        vec->data = new_data;
-        vec->capacity = n;
-        vec->size = n;
-        return;
+        memset(vec->data, *(int *)val, n*vec->element_size);
+        vec->size = vec->capacity;
+        return VECTOR_SUCCESS;
     }
 
     // In case size of assign requirement is smaller or equal current capacity
     void* pos = vec->data;
     for(int i = 0; i < n; ++i){
-        memcpy(pos, val, vec->element_size);
-        pos += vec->element_size;
+        __update_element(vec, i, val);
     }
+    return VECTOR_SUCCESS;
 }
 
 void* vector_front(vector* vec) {
@@ -122,6 +172,20 @@ void* vector_back(vector* vec) {
 
 void* vector_data(vector* vec) {
     return vec->data;
+}
+
+int vector_shrink_to_fit(vector* vec){
+    assert(vec != NULL);
+
+    if(vec == NULL) return VECTOR_FAILURE;
+
+    if(__should_shrink(vec)){
+        if(__vector_realloc(vec, vec->size) == VECTOR_FAILURE){
+            return VECTOR_FAILURE;
+        }
+    }
+
+    return VECTOR_SUCCESS;
 }
 
 iterator vector_iterator(vector* vec, int idx){
