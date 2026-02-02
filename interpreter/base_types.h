@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*Integer define*/
 typedef uint64_t    U64;
@@ -38,11 +40,12 @@ typedef union {
 
 typedef struct {
   TokenType token;
-  Sematics seminfo;
+  char* seminfo;
 }Token;
 
 typedef struct {
   Token *tok;
-  size_t tok_cnt;
+  size_t tok_size;
+  size_t tok_capacity;
   char *line;
 } LexState;
