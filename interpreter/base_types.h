@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /*Integer define*/
@@ -23,18 +25,24 @@ typedef struct {
 /*Lex*/
 #define FIRST_RESERVED 256
 
-enum RESERVED {
+typedef enum {
     /* terminal symbols denoted by reserved words */
   TK_AND = FIRST_RESERVED,
-  TK_FLT, TK_INT, TK_NAME, TK_STRING
-};
+  TK_FLT, TK_INT, TK_NAME, TK_STRING, TK_PLUS
+} TokenType;
 
 typedef union {
-    I8 integer;
-    S8 str;
+  I8 integer;
+  S8 str;
 } Sematics;
 
 typedef struct {
-    int token;
-    Sematics seminfo;
+  TokenType token;
+  Sematics seminfo;
 }Token;
+
+typedef struct {
+  Token *tok;
+  size_t tok_cnt;
+  char *line;
+} LexState;
