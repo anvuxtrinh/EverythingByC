@@ -1,13 +1,27 @@
-#include <stdio.h>
-#include "base_types.h"
+#include "lexer.h"
 
-I32 main(I32 argc, char* argv) {
-    S8 s;
-    printf("Interpreter is running...\n");
+/*
+Do REPL: repeatedly read (load) a line, evaluate (call), and print any result, then loop
+*/
+void doREPL(){
+    char input[256];
+    I8 ret;
     while(1){
         printf(">> ");
-        fgets(s.data_ptr, 256, stdin);
-        printf("%s\n", STR_FMT(s));
+        fgets(input, 256, stdin);
+        
+        LexState ls = {
+            .line = input,
+        };
+        ret = lex(&ls);
+        for(int i = 0; i < ls.tok_size; ++i){
+            printf("{Type: %d, Data: %s\n}", ls.tok[i].token, ls.tok[i].seminfo);
+        }
     }
+}
+
+I32 main(I32 argc, char* argv) {
+    printf("Interpreter is running...\n");
+    doREPL();
     return 0;
 }
