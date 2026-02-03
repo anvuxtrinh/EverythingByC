@@ -11,11 +11,13 @@ void doREPL(){
         fgets(input, 256, stdin);
         
         LexState ls = {
-            .line = input,
+            .line_st = input,
+            .current = input,
+            .line_num = 0,
         };
         ret = lex(&ls);
         for(int i = 0; i < ls.tok_size; ++i){
-            printf("{Type: %d, Data: %s\n}", ls.tok[i].token, ls.tok[i].seminfo);
+            printf("{Type: %d, Data: %s}\n", ls.tok[i].token, ls.tok[i].seminfo);
         }
     }
 }
