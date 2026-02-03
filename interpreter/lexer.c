@@ -1,37 +1,40 @@
 #include "lexer.h"
 
-I8 push_tok(LexState *ls, TokenType tok_type, char *sem, size_t sem_size);
-I8 _isdigit(char c);
+I8 push_tok(LexState *ls, TokenType tok_type, char *sem);
+I8 isdigit(unsigned char c);
 I8 stoi(char *c, size_t len);
+U8 get_digit(char *line, U8 idx);
 
 I8 lex(LexState *ls){
-    char c; U8 idx = 0;
-    char *line = ls->line;
-    
-    while((c = line[idx]) != '\0'){
-        push_tok(ls, TK_PLUS, &c, 1);
-        // switch (c)
-        // {
-        // case '+':
-        //     push_tok(ls, TK_PLUS, "+");
-        //     break;
-        
-        // default:
-        //     char buff[256];
-        //     U8 i = 0;
-        //     while(isdigit(c)){
-        //         if(i == 256){ break; }
-        //         buff[i] = c;
-        //         ++i;
-        //     }
-        //     if(i != 0){ push_tok(ls, TK_INT, buff); }
-        //     break;
-        // }
-        idx++;
+    char c;
+    while((c = *ls->current) != '\0'){
+        switch(c){
+            case '+':
+                push_tok(ls, TK_PLUS, "+");
+                break;
+            default:
+                if(isdigit(c)){
+                    char *st = ls->current;
+                    while(c != '\0' && isdigit(c)){ c = *(++ls->current); }
+                    U8 len = ls->current - st;
+                    char *digit = (char *)malloc(sizeof(char)*len + 1);
+                    memcpy(digit, st, sizeof(char)*len);
+                    push_tok(ls, TK_INT, digit);
+                    continue;
+                }
+                break;
+        }
+        ++ls->current;
     }
 }
 
-I8 push_tok(LexState *ls, TokenType tok_type, char *sem, size_t sem_size){
+U8 get_digit(char *line, U8 idx){
+    while(isdigit(line[idx])){
+
+    }
+}
+
+I8 push_tok(LexState *ls, TokenType tok_type, char *sem){
     Token *tok = ls->tok;
     size_t capacity = ls->tok_capacity;
     size_t size = ls->tok_size;
@@ -59,8 +62,9 @@ I8 push_tok(LexState *ls, TokenType tok_type, char *sem, size_t sem_size){
     return 1;
 }
 
-I8 _isdigit(char c){
-    return c - '0' >= 0 &&  c - '0' < 10;
+I8 isdigit(unsigned char c){
+    I8 num = c - '0';
+    return num >= 0 && num < 10;
 }
 
 I8 stoi(char *c, size_t len){
