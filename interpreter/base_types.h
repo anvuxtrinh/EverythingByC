@@ -47,5 +47,7 @@ typedef struct {
   Token *tok;
   size_t tok_size;
   size_t tok_capacity;
-  char *line;
+  char *line_st;
+  char *current;
+  U8 line_num;
 } LexState;
