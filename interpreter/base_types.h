@@ -30,7 +30,7 @@ typedef struct {
 typedef enum {
     /* terminal symbols denoted by reserved words */
   TK_AND = FIRST_RESERVED,
-  TK_FLT, TK_INT, TK_NAME, TK_STRING, TK_PLUS
+  TK_FLT, TK_INT, TK_NAME, TK_STRING, TK_PLUS, TK_EOF,
 } TokenType;
 
 typedef union {
@@ -51,3 +51,33 @@ typedef struct {
   char *current;
   U8 line_num;
 } LexState;
+
+/*Parser*/
+typedef struct {
+  Token *tok;
+  size_t tok_size;
+  size_t tok_capacity;
+  U32 tok_idx;
+}Parser;
+
+/*Ast*/
+typedef enum {
+    ADD_SUB,
+    DIV_MUL
+} Precedence;
+
+typedef enum {
+    ATOM,
+    OPERATION
+} ExprType;
+
+typedef struct {
+    ExprType type;
+    char *data;
+} Expr;
+
+typedef struct{
+    Expr rhs;
+    Expr lhs;
+    Expr op;
+}BinaryExpr;
