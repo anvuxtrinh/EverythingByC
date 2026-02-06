@@ -26,12 +26,7 @@ I8 lex(LexState *ls){
         }
         ++ls->current;
     }
-}
-
-U8 get_digit(char *line, U8 idx){
-    while(isdigit(line[idx])){
-
-    }
+    
 }
 
 I8 push_tok(LexState *ls, TokenType tok_type, char *sem){
@@ -67,6 +62,9 @@ I8 isdigit(unsigned char c){
     return num >= 0 && num < 10;
 }
 
-I8 stoi(char *c, size_t len){
-    return 1;
+void cleanup(LexState *ls){
+    for(I32 idx = 0; idx < ls->tok_size; ++idx){
+        if(ls->tok[idx].token == TK_INT) { free(ls->tok[idx].seminfo); }
+    }
+    free(ls->tok);
 }
