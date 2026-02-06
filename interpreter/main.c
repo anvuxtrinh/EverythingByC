@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "parser.h"
 
 /*
 Do REPL: repeatedly read (load) a line, evaluate (call), and print any result, then loop
@@ -19,6 +20,13 @@ void doREPL(){
         for(int i = 0; i < ls.tok_size; ++i){
             printf("{Type: %d, Data: %s}\n", ls.tok[i].token, ls.tok[i].seminfo);
         }
+
+        Parser parser = parser_init(&ls);
+        BinaryExpr ast = parse(&parser);
+
+        printf("{%d, %s}, {%d, %s}, {%d, %s}\n", ast.lhs.type, ast.lhs.data, ast.op.type, ast.op.data, ast.rhs.type, ast.rhs.data);
+
+        cleanup(&ls);
     }
 }
 
