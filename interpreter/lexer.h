@@ -3,3 +3,4 @@
 #include "base_types.h"
 
 I8 lex(LexState *ls);
+void cleanup(LexState *ls);
