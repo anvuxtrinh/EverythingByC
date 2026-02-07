@@ -1,11 +1,11 @@
 #include "lexer.h"
 
-I8 push_tok(LexState *ls, TokenType tok_type, char *sem);
-I8 isdigit(unsigned char c);
-I8 stoi(char *c, size_t len);
-U8 get_digit(char *line, U8 idx);
+i8 push_tok(LexState *ls, TokenType tok_type, char *sem);
+i8 isdigit(unsigned char c);
+i8 stoi(char *c, size_t len);
+u8 get_digit(char *line, u8 idx);
 
-I8 lex(LexState *ls){
+i8 lex(LexState *ls){
     char c;
     while((c = *ls->current) != '\0'){
         switch(c){
@@ -16,7 +16,7 @@ I8 lex(LexState *ls){
                 if(isdigit(c)){
                     char *st = ls->current;
                     while(c != '\0' && isdigit(c)){ c = *(++ls->current); }
-                    U8 len = ls->current - st;
+                    u8 len = ls->current - st;
                     char *digit = (char *)malloc(sizeof(char)*len + 1);
                     memcpy(digit, st, sizeof(char)*len);
                     push_tok(ls, TK_INT, digit);
@@ -29,42 +29,21 @@ I8 lex(LexState *ls){
     
 }
 
-I8 push_tok(LexState *ls, TokenType tok_type, char *sem){
-    Token *tok = ls->tok;
-    size_t capacity = ls->tok_capacity;
-    size_t size = ls->tok_size;
-
-    //Allocate memory
-    if(capacity >= size){
-        if(capacity == 0){
-            tok = (Token *)malloc(1 * sizeof(Token));
-            capacity = 1;
-        }else{
-            size_t new_capacity = capacity * 2;
-            Token *new_tok = (Token *)realloc(tok, sizeof(Token) * new_capacity);
-            tok = new_tok;
-            capacity = new_capacity;
-        }
-    }
-    
-    //Update new infomation
-
-    tok[size].token = tok_type;
-    tok[size].seminfo = sem;
-    ls->tok = tok;
-    ls->tok_capacity = capacity;
-    ls->tok_size = size + 1;
+i8 push_tok(LexState *ls, TokenType tok_type, char *sem){
+    Token tok = { .token = tok_type, .seminfo = sem };
+    vector_append(&(ls->tok), REF(tok));
     return 1;
 }
 
-I8 isdigit(unsigned char c){
-    I8 num = c - '0';
+i8 isdigit(unsigned char c){
+    i8 num = c - '0';
     return num >= 0 && num < 10;
 }
 
 void cleanup(LexState *ls){
-    for(I32 idx = 0; idx < ls->tok_size; ++idx){
-        if(ls->tok[idx].token == TK_INT) { free(ls->tok[idx].seminfo); }
+    for(i32 idx = 0; idx < ls->tok_size; ++idx){
+        Token *tok = vector_at(Token, &(ls->tok), idx);
+        if(tok->token == TK_INT) { free(tok->seminfo); }
     }
-    free(ls->tok);
+    vector_destroy(&(ls->tok));
 }

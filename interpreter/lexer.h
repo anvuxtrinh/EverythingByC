@@ -1,6 +1,7 @@
 #pragma once
 
-#include "base_types.h"
+#include "typedef.h"
+#include "vector.h"
 
-I8 lex(LexState *ls);
+i8 lex(LexState *ls);
 void cleanup(LexState *ls);

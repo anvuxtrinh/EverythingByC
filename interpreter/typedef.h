@@ -1,28 +1,24 @@
 #pragma once
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 /*Integer define*/
-typedef uint64_t    U64;
-typedef uint32_t    U32;
-typedef uint8_t     U8;
-typedef int64_t     I64;
-typedef int32_t     I32;
-typedef int8_t      I8;
+typedef uint64_t    u64;
+typedef uint32_t    u32;
+typedef uint8_t     u8;
+typedef int64_t     i64;
+typedef int32_t     i32;
+typedef int8_t      i8;
 
-/*String define*/
-typedef struct {
-    U8* data_ptr;
-    U64 size;
-} S8;
-
-#define STR_INIT(s) { .data_ptr = (U8*) s, .size = sizeof(s) - 1}
-#define STR_FMT(s) (U8*) s.data_ptr
-#define STR_SIZE(s) (U64) s.size
+/*vector*/
+typedef struct{
+    void *data;
+    size_t size;
+    size_t capacity;
+    size_t esize;
+} vector;
 
 /*Lex*/
 #define FIRST_RESERVED 256
@@ -34,8 +30,8 @@ typedef enum {
 } TokenType;
 
 typedef union {
-  I8 integer;
-  S8 str;
+  i8 integer;
+  char *str;
 } Sematics;
 
 typedef struct {
@@ -44,20 +40,18 @@ typedef struct {
 }Token;
 
 typedef struct {
-  Token *tok;
+  vector tok;
   size_t tok_size;
   size_t tok_capacity;
   char *line_st;
   char *current;
-  U8 line_num;
+  u8 line_num;
 } LexState;
 
 /*Parser*/
 typedef struct {
-  Token *tok;
-  size_t tok_size;
-  size_t tok_capacity;
-  U32 tok_idx;
+  vector tok;
+  u32 tok_idx;
 }Parser;
 
 /*Ast*/
