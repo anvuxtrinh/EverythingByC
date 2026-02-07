@@ -35,7 +35,7 @@ i32 __adjust_capacity(vector *vec){
 
     if(!__is_initialized(vec)){ return VECTOR_FAILURE; }
 
-    vec->capacity *= 2;
+    vec->capacity = vec->capacity == 0 ? 1 : 2*vec->capacity;
     void *reallocated = realloc(vec->data, vec->esize*vec->capacity);
     if(!reallocated){
         return VECTOR_FAILURE;
