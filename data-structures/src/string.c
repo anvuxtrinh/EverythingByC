@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "string.h"
 
-s8 __s8_create(s8 *src){
+s8 __s8_create_by_another(s8 *src){
     s8 s;
     if(src == NULL){
         s.str = malloc(1);
@@ -18,7 +18,7 @@ s8 __s8_create(s8 *src){
     return s;
 }
 
-s8 __s8_cptr(char *cptr, u64 size){
+s8 __s8_create_by_cptr(char *cptr, u64 size){
     assert(cptr != NULL);
     
     s8 s = {
@@ -29,10 +29,20 @@ s8 __s8_cptr(char *cptr, u64 size){
 
     if(cptr == NULL){ return s; }
 
-    s.str = malloc(size);
+    s.str = malloc(size + 1);
     s.size = size;
-    s.capacity = size;
-    memcpy(s.str, cptr, size);
+    s.capacity = size + 1;
+    memcpy(s.str, cptr, size+1);
+    return s;
+}
+
+s8 __s8_create(){
+    s8 s = {
+        .str = (u8 *)malloc(1),
+        .size = 0,
+        .capacity = 1
+    };
+    memset(s.str, 0x00, 1);
     return s;
 }
 

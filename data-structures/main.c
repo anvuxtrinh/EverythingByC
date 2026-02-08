@@ -16,11 +16,14 @@ i32 main(i32 argc, char *argv[]){
     vector_destroy(&vec);
 
     //string
-    s8 s = s8_lit("Hello Wold");
-    s8 empty = s8_create(NULL);
+    char buf[256] = "Goodbye";
+    s8 s = s8_create("Hello Wold", strlen("Hello Wold"));
+    s8 sc = s8_create(buf, strlen(buf));
+    s8 empty = s8_create();
     s8 cp = s8_create(&s);
 
     printf("%s\n", s8_string(&s));
+    printf("%s\n", s8_string(&sc));
     printf("%s\n", s8_string(&empty));
     printf("%s\n", s8_string(&cp));
     return 0;
