@@ -12,6 +12,9 @@
 #define S8_FAILURE 0
 #endif
 
+void *memset(void * ptr, int value, size_t num);
+void *memcpy(void * destination, const void * source, size_t num);
+
 typedef struct{
     u8 *str;
     u64 size;

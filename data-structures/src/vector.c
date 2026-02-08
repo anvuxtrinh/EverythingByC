@@ -41,6 +41,7 @@ i32 __adjust_capacity(vector *vec){
         return VECTOR_FAILURE;
     }
     vec->data = reallocated;
+    return VECTOR_SUCCESS;
 }
 
 i32 __push_back(vector *vec, void *val){
@@ -108,7 +109,7 @@ void *__vector_at(vector *vec, size_t idx){
     if(!__is_initialized(vec)) { return NULL; }
     if(!__valid_index(vec, idx)) { return NULL; }
 
-    return vec->data + idx*vec->esize;
+    return (char *)vec->data + idx*vec->esize;
 }
 
 size_t __vector_size(vector *vec){
