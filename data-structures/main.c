@@ -26,6 +26,10 @@ i32 main(i32 argc, char *argv[]){
     printf("%s\n", s8_string(&sc));
     printf("%s\n", s8_string(&empty));
     printf("%s\n", s8_string(&cp));
+    for(u8 i = 0; i < s8_size(&s); ++i){
+        printf("%c ", s8_char(&s, i));
+    }
+    printf("\n");
     return 0;
 }
 
