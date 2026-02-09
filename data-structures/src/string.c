@@ -49,3 +49,15 @@ s8 __s8_create(){
 u8 *__s8_string(s8 *s){
     return s->str; 
 }
+
+u64 __s8_size(s8 *s){
+    return s->size;
+}
+
+u8 *__s8_at(s8 *s, u64 idx){
+    return idx > s->size ? NULL : s->str + idx;
+}
+
+char __s8_char(s8 *s, u64 idx){
+    return idx > s->size ? '\0' : s->str[idx];
+}
