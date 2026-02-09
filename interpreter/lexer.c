@@ -43,7 +43,11 @@ i8 isdigit(unsigned char c){
 void cleanup(LexState *ls){
     for(i32 idx = 0; idx < ls->tok_size; ++idx){
         Token *tok = vector_at(Token, &(ls->tok), idx);
-        if(tok->token == TK_INT) { free(tok->seminfo); }
+        if(tok->token == TK_INT) { 
+            free(tok->seminfo); 
+            tok->seminfo = NULL;
+        }
+
     }
     vector_destroy(&(ls->tok));
 }
