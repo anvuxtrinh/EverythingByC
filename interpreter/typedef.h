@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 
 /*Integer define*/
 typedef uint64_t    u64;
@@ -19,6 +18,13 @@ typedef struct{
     size_t capacity;
     size_t esize;
 } vector;
+
+/*string*/
+typedef struct{
+    u8 *str;
+    u64 size;
+    u64 capacity;
+} s8;
 
 /*Lex*/
 #define FIRST_RESERVED 256
@@ -74,4 +80,4 @@ typedef struct binary_expr{
     struct binary_expr *rhs;
     struct binary_expr *lhs;
     Expr op;
-}BinaryExpr;
+}BinExpr;
