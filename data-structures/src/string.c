@@ -5,12 +5,12 @@
 s8 __s8_create_by_another(s8 *src){
     s8 s;
     if(src == NULL){
-        s.str = malloc(1);
+        s.str = (u8 *)malloc(1);
         s.size = 0;
         s.capacity = 1;
         memset(s.str, 0x00, 1);
     }else{
-        s.str = malloc(src->size + 1);
+        s.str = (u8 *)malloc(src->size + 1);
         s.size = src->size;
         s.capacity = src->size + 1;
         memcpy(s.str, src->str, s.size);
@@ -29,7 +29,7 @@ s8 __s8_create_by_cptr(char *cptr, u64 size){
 
     if(cptr == NULL){ return s; }
 
-    s.str = malloc(size + 1);
+    s.str = (u8 *)malloc(size + 1);
     s.size = size;
     s.capacity = size + 1;
     memcpy(s.str, cptr, size+1);
