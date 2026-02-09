@@ -31,7 +31,19 @@ typedef struct{
 #define s8_string(s) \
     __s8_string(s)
 
+#define s8_size(s) \
+    __s8_size(s)
+
+#define s8_at(s, idx) \
+    __s8_at(s, idx)
+
+#define s8_char(s, idx) \
+    __s8_char(s, idx)
+
 s8 __s8_create_by_cptr(char *cptr, u64 size);
 s8 __s8_create_by_another(s8 *src);
 s8 __s8_create();
 u8 *__s8_string(s8 *s);
+u64 __s8_size(s8 *s);
+u8 *__s8_at(s8 *s, u64 idx);
+char __s8_char(s8 *s, u64 idx);
