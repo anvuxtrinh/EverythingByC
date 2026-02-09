@@ -7,7 +7,7 @@
 Do REPL: repeatedly read (load) a line, evaluate (call), and print any result, then loop
 */
 
-void bton(vector *nums, BinaryExpr *root){
+void bton(vector *nums, BinExpr *root){
     if(root == NULL){
         return;
     }
@@ -36,7 +36,7 @@ void doREPL(){
         }
 
         // Parser parser = parser_init(&ls);
-        BinaryExpr *ast = parse(&ls);
+        BinExpr *ast = parse(&ls);
 
         vector expr_list = vector_create(Expr, 0, NULL);
         bton(&expr_list, ast);

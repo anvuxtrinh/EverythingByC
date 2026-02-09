@@ -1,11 +1,11 @@
 #include "vector.h"
 #include "parser.h"
 
-BinaryExpr *tok_to_binaryexpr(vector *tok, u64 l, u64 r){
+BinExpr *tok2expr(vector *tok, u64 l, u64 r){
     if(l >= r){ return NULL; }
 
     
-    BinaryExpr *bin_expr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    BinExpr *bin_expr = (BinExpr *)malloc(sizeof(BinExpr));
     if(bin_expr == NULL){ return; }
 
     u64 mid = l + (r - l)/2;
@@ -22,14 +22,14 @@ BinaryExpr *tok_to_binaryexpr(vector *tok, u64 l, u64 r){
     }
     
     bin_expr->op.data = current->seminfo;
-    bin_expr->lhs = tok_to_binaryexpr(tok, l, mid);
-    bin_expr->rhs = tok_to_binaryexpr(tok, mid+1, r);
+    bin_expr->lhs = tok2expr(tok, l, mid);
+    bin_expr->rhs = tok2expr(tok, mid+1, r);
 
     return bin_expr;
 }
 
-BinaryExpr* parse(LexState* ls){
-    BinaryExpr *ast = tok_to_binaryexpr(&ls->tok, 0, vector_size(&ls->tok));
+BinExpr* parse(LexState* ls){
+    BinExpr *ast = tok2expr(&ls->tok, 0, vector_size(&ls->tok));
     // current = vector_at(Token, &ls->tok, 0);
     // Expr lhs = {
     //     .type = ATOM,
