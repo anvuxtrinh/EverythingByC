@@ -26,14 +26,14 @@
 
 typedef struct{
     void *data;
-    size_t size;
-    size_t capacity;
-    size_t esize;
+    u64 size;
+    u64 capacity;
+    u64 esize;
 } vector;
 
-vector __vector_create(size_t esize, size_t size, void *val);
+vector __vector_create(u64 esize, u64 size, void *val);
 void __vector_destroy(vector *vec);
 i32 __vector_append(vector *vec, void *val);
 i32 __vector_clear(vector *vec);
-void *__vector_at(vector *vec, size_t idx);
-size_t __vector_size(vector *vec);
+void *__vector_at(vector *vec, u64 idx);
+u64 __vector_size(vector *vec);

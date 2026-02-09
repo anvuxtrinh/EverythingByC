@@ -11,14 +11,14 @@
 #define VECTOR_FAILURE 0
 #endif
 
-void *__init_dynamic_array(size_t size);
-i32 __update_element(vector *vec, size_t idx, void *val);
+void *__init_dynamic_array(u64 size);
+i32 __update_element(vector *vec, u64 idx, void *val);
 
 u8 __is_initialized(vector *vec){
     return vec != NULL && vec->data != NULL;
 }
 
-u8 __valid_index(vector *vec, size_t idx){
+u8 __valid_index(vector *vec, u64 idx){
     return idx < vec->size;
 }
 
@@ -53,21 +53,21 @@ i32 __push_back(vector *vec, void *val){
 
     if(vec->size >= vec->capacity){ return VECTOR_FAILURE; }
 
-    size_t size = vec->esize*vec->size;
+    u64 size = vec->esize*vec->size;
     void *dict = (char *) vec->data + size;
     memcpy(dict, val, vec->esize);
     ++vec->size;
     return VECTOR_SUCCESS;
 }
 
-void *__init_dynamic_array(size_t size){
+void *__init_dynamic_array(u64 size){
     void *array = malloc(size);
     if(array == NULL){ return NULL; }
     memset(array, 0, size);
     return array;
 }
 
-i32 __update_element(vector *vec, size_t idx, void *val){
+i32 __update_element(vector *vec, u64 idx, void *val){
     assert(__is_initialized(vec));
     assert(__valid_ptr(val));
 
@@ -81,8 +81,8 @@ i32 __update_element(vector *vec, size_t idx, void *val){
     return VECTOR_SUCCESS;
 }
 
-vector __vector_create(size_t esize, size_t _enum, void *val){
-    size_t size = _enum * esize;
+vector __vector_create(u64 esize, u64 _enum, void *val){
+    u64 size = _enum * esize;
     vector vec;
     
     vec.data = __init_dynamic_array(size);
@@ -95,14 +95,14 @@ vector __vector_create(size_t esize, size_t _enum, void *val){
     if(!__valid_ptr(val)){ return vec; }
 
     //Initialize value
-    for(size_t i = 0; i < _enum; ++i){
+    for(u64 i = 0; i < _enum; ++i){
         __update_element(&vec, i, val);  
     }
 
     return vec;
 }
 
-void *__vector_at(vector *vec, size_t idx){
+void *__vector_at(vector *vec, u64 idx){
     assert(__is_initialized(vec));
     assert(__valid_index(vec, idx));
 
@@ -112,7 +112,7 @@ void *__vector_at(vector *vec, size_t idx){
     return (char *)vec->data + idx*vec->esize;
 }
 
-size_t __vector_size(vector *vec){
+u64 __vector_size(vector *vec){
     assert(vec != NULL);
 
     if(vec == NULL){ return 0; }
