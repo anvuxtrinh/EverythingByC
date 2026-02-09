@@ -6,6 +6,16 @@
 /*
 Do REPL: repeatedly read (load) a line, evaluate (call), and print any result, then loop
 */
+
+void bton(vector *nums, BinaryExpr *root){
+    if(root == NULL){
+        return;
+    }
+    vector_append(nums, &root->op);
+    bton(nums, root->lhs);
+    bton(nums, root->rhs);
+}
+    
 void doREPL(){
     char input[256];
     i8 ret;
@@ -26,10 +36,15 @@ void doREPL(){
         }
 
         // Parser parser = parser_init(&ls);
-        BinaryExpr ast = parse(&ls);
+        BinaryExpr *ast = parse(&ls);
 
-        printf("{%d, %s}, {%d, %s}, {%d, %s}\n", ast.lhs.type, ast.lhs.data, ast.op.type, ast.op.data, ast.rhs.type, ast.rhs.data);
+        vector expr_list = vector_create(Expr, 0, NULL);
+        bton(&expr_list, ast);
 
+        for(u64 i = 0; i < vector_size(&expr_list); ++i){
+            Expr *ex = vector_at(Expr, &expr_list, i);
+            printf("{%d - %s} ", ex->type, ex->data);
+        }
         cleanup(&ls);
     }
 }
