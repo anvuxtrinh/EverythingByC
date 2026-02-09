@@ -70,8 +70,8 @@ typedef struct {
     char *data;
 } Expr;
 
-typedef struct{
-    Expr rhs;
-    Expr lhs;
+typedef struct binary_expr{
+    struct binary_expr *rhs;
+    struct binary_expr *lhs;
     Expr op;
 }BinaryExpr;
