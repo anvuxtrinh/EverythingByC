@@ -2,4 +2,4 @@
 
 #include "typedef.h"
 
-BinaryExpr parse(LexState *ls);
+BinaryExpr* parse(LexState *ls);
