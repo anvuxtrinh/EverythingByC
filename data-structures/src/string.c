@@ -85,6 +85,7 @@ s8 __s8_substr(s8 *s, u64 st, u64 en){
     sub.len = len;
     sub.size = len + 1;
     sub.capacity = len + 1;
-    memcpy(sub.str, s->str + st, sub.size);
+    memcpy(sub.str, s->str + st, len);
+    sub.str[len] = '\0';
     return sub;
 }
