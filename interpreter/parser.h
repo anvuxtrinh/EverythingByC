@@ -2,4 +2,4 @@
 
 #include "typedef.h"
 
-BinExpr* parse(LexState *ls);
+BinExpr* parse(Lexer *ls);
