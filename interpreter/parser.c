@@ -6,7 +6,7 @@ BinExpr *tok2expr(vector *tok, u64 l, u64 r){
 
     
     BinExpr *bin_expr = (BinExpr *)malloc(sizeof(BinExpr));
-    if(bin_expr == NULL){ return; }
+    if(bin_expr == NULL){ return NULL; }
 
     u64 mid = l + (r - l)/2;
     Token *current = vector_at(Token, tok, mid);
@@ -28,25 +28,7 @@ BinExpr *tok2expr(vector *tok, u64 l, u64 r){
     return bin_expr;
 }
 
-BinExpr* parse(LexState* ls){
-    BinExpr *ast = tok2expr(&ls->tok, 0, vector_size(&ls->tok));
-    // current = vector_at(Token, &ls->tok, 0);
-    // Expr lhs = {
-    //     .type = ATOM,
-    //     .data = current->seminfo
-    // };
-
-    // current = vector_at(Token, &ls->tok, 1);
-    // Expr op = {
-    //     .type = OPERATION,
-    //     .data = current->seminfo
-    // };
-
-    // current = vector_at(Token, &ls->tok, 2);
-    // Expr rhs = {
-    //     .type = ATOM,
-    //     .data = current->seminfo
-    // };
-
+BinExpr* parse(Lexer* l){
+    BinExpr *ast = tok2expr(&l->tok, 0, vector_size(&l->tok));
     return ast;
 }
