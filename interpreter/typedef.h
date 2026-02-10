@@ -23,6 +23,7 @@ typedef struct{
 typedef struct{
     u8 *str;
     u64 size;
+    u64 len;
     u64 capacity;
 } s8;
 
@@ -37,22 +38,20 @@ typedef enum {
 
 typedef union {
   i8 integer;
-  char *str;
+  s8 str;
 } Sematics;
 
 typedef struct {
   TokenType token;
-  char* seminfo;
+  s8 seminfo;
 }Token;
 
 typedef struct {
   vector tok;
-  size_t tok_size;
-  size_t tok_capacity;
-  char *line_st;
-  char *current;
-  u8 line_num;
-} LexState;
+  s8 text;
+  const char *bol;  /*begin of line*/
+  const char *cursor;
+} Lexer;
 
 /*Parser*/
 typedef struct {
@@ -73,7 +72,7 @@ typedef enum {
 
 typedef struct {
     ExprType type;
-    char *data;
+    s8 data;
 } Expr;
 
 typedef struct binary_expr{
