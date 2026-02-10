@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include <stdio.h>
 #include "typedef.h"
@@ -28,16 +28,28 @@ size_t strlen (const char *str);
 #define s8_size(s) \
     __s8_size(s)
 
+#define s8_len(s) \
+    __s8_len(s)
+
 #define s8_at(s, idx) \
-    __s8_at(s, idx)
+    (char *)__s8_at(s, idx)
 
 #define s8_char(s, idx) \
     __s8_char(s, idx)
+
+#define s8_destroy(s) \
+    __s8_destroy(s)
+
+#define s8_substr(s, st, en) \
+    __s8_substr(s, st, en)
 
 s8 __s8_create_by_cptr(char *cptr, u64 size);
 s8 __s8_create_by_another(s8 *src);
 s8 __s8_create();
 u8 *__s8_string(s8 *s);
 u64 __s8_size(s8 *s);
+u64 __s8_len(s8 *s);
 u8 *__s8_at(s8 *s, u64 idx);
 char __s8_char(s8 *s, u64 idx);
+void __s8_destroy(s8 *s);
+s8 __s8_substr(s8 *s, u64 st, u64 en);
