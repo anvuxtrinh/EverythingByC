@@ -1,37 +1,37 @@
 #include "lexer.h"
+#include "string.h"
 
-i8 push_tok(LexState *ls, TokenType tok_type, char *sem);
+i8 push_tok(Lexer *l, TokenType tok_type, s8 sem);
 i8 isdigit(unsigned char c);
 i8 stoi(char *c, size_t len);
 u8 get_digit(char *line, u8 idx);
 
-i8 lex(LexState *ls){
+i8 lex(Lexer *l){
     char c;
-    while((c = *ls->current) != '\0'){
+    while((c = *l->cursor) != '\0'){
         switch(c){
             case '+':
-                push_tok(ls, TK_PLUS, "+");
+                push_tok(l, TK_PLUS, s8_create("+", strlen("+")));
                 break;
             default:
                 if(isdigit(c)){
-                    char *st = ls->current;
-                    while(c != '\0' && isdigit(c)){ c = *(++ls->current); }
-                    u8 len = ls->current - st;
-                    char *digit = (char *)malloc(sizeof(char)*len + 1);
-                    memcpy(digit, st, sizeof(char)*len);
-                    push_tok(ls, TK_INT, digit);
+                    u64 st = l->cursor - l->bol;
+                    while(c != '\0' && isdigit(c)){ c = *(++l->cursor); }
+                    u64 en = l->cursor - l->bol;
+                    s8 digit = s8_substr(&l->text, st, en);
+                    push_tok(l, TK_INT, digit);
                     continue;
                 }
                 break;
         }
-        ++ls->current;
+        ++l->cursor;
     }
     
 }
 
-i8 push_tok(LexState *ls, TokenType tok_type, char *sem){
+i8 push_tok(Lexer *l, TokenType tok_type, s8 sem){
     Token tok = { .token = tok_type, .seminfo = sem };
-    vector_append(&(ls->tok), REF(tok));
+    vector_append(&(l->tok), REF(tok));
     return 1;
 }
 
@@ -40,14 +40,10 @@ i8 isdigit(unsigned char c){
     return num >= 0 && num < 10;
 }
 
-void cleanup(LexState *ls){
-    for(i32 idx = 0; idx < ls->tok_size; ++idx){
-        Token *tok = vector_at(Token, &(ls->tok), idx);
-        if(tok->token == TK_INT) { 
-            free(tok->seminfo); 
-            tok->seminfo = NULL;
-        }
-
+void cleanup(Lexer *l){
+    for(i32 idx = 0; idx < vector_size(&l->tok); ++idx){
+        Token *tok = vector_at(Token, &(l->tok), idx);
+        s8_destroy(&tok->seminfo);
     }
-    vector_destroy(&(ls->tok));
+    vector_destroy(&(l->tok));
 }
