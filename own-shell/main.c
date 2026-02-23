@@ -111,6 +111,16 @@ void pwd_cb(vector *components){
   printf("%s\n", cwd);
 }
 
+void cd_cb(vector *components){
+  s8 *dict = vector_at(s8, components, 1);
+  i64 ret = chdir(dict->str);
+  if(ret < 0){
+    if(errno == ENOENT){
+      printf("cd: %s: No such file or directory\n", s8_string(dict));
+    }
+  }
+}
+
 void (*cmd_lookup(s8 *s))(vector *components) {
   if(!strcmp(s8_string(s), "echo")){
     return &echo_cb;
@@ -120,6 +130,9 @@ void (*cmd_lookup(s8 *s))(vector *components) {
   }
   if(!strcmp(s8_string(s), "pwd")){
     return &pwd_cb;
+  }
+  if(!strcmp(s8_string(s), "cd")){
+    return &cd_cb;
   }
   return NULL;
 }
