@@ -112,11 +112,21 @@ void pwd_cb(vector *components){
 }
 
 void cd_cb(vector *components){
-  s8 *dict = vector_at(s8, components, 1);
-  i64 ret = chdir(dict->str);
+  s8 dict;
+  s8 *argv = vector_at(s8, components, 1);
+  if(s8_char(argv, 0) == '~'){
+    s8_erase(argv, 0, 1);
+    const char *env_var_val = getenv("HOME");
+    s8 home_path = s8_create(env_var_val, strlen(env_var_val));
+    dict = s8_strcat(&home_path, argv);
+    s8_destroy(&home_path);
+  }else{
+    dict = *argv;
+  }
+  i64 ret = chdir(dict.str);
   if(ret < 0){
     if(errno == ENOENT){
-      printf("cd: %s: No such file or directory\n", s8_string(dict));
+      printf("cd: %s: No such file or directory\n", s8_string(&dict));
     }
   }
 }
