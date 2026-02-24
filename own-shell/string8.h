@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "typedef.h"
+#include "vector.h"
 
 #ifndef S8_SUCCESS
 #define S8_SUCCESS 1
@@ -46,6 +47,15 @@
 #define s8_append(s, c) \
     __s8_append(s, c)
 
+#define s8_find(s, st, sub) \
+    __s8_find(s, st, sub)
+
+#define s8_find_all(s, sub) \
+    __s8_find_all(s, sub)
+
+#define s8_erase(s, idx, len) \
+    __s8_erase(s, idx, len)
+
 s8 __s8_create_by_cptr(char *cptr, u64 size);
 s8 __s8_create_by_another(s8 *src);
 s8 __s8_create();
@@ -58,6 +68,10 @@ void __s8_destroy(s8 *s);
 s8 __s8_substr(s8 *s, u64 st, u64 en);
 s8 __s8_strcat(s8 *s1, s8 *s2);
 u8 __s8_append(s8 *s, char c);
+i64 __s8_find(s8 *s, u64 st, char *sub);
+vector __s8_find_all(s8 *s, char *sub);
+void __s8_replace(s8 *s, char *old, char *new);
+void __s8_erase(s8 *s, u64 idx, u64 len);
 
 s8 __s8_create_by_another(s8 *src){
     if(src == NULL){
@@ -175,4 +189,54 @@ u8 __s8_append(s8 *s, char c){
     ++s->len;
     s->str[s->size] = '/0';
     return S8_SUCCESS;
+}
+
+u64 __strlen(char* str){
+    u64 len = 0;
+    while(str[len] != '\0'){
+        ++len;
+    }
+    return len;
+}
+
+i64 __s8_find(s8 *s, u64 st, char *sub){
+    u64 len1 = s->len;
+    u64 len2 = __strlen(sub);
+
+    for(u64 i = st; i < len1-len2; ++i){
+        u64 j = 0;
+        while(j < len2 && s->str[i+j] == sub[j]){
+            ++j;
+        }
+        if(j == len2){
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+vector __s8_find_all(s8 *s, char *sub){
+    u64 st = 0;
+    u64 sub_len = __strlen(sub);
+    vector ret = vector_create(u64, 0, NULL);
+    i64 idx;
+    while((idx = __s8_find(s, st, sub)) != -1){
+        vector_append(&ret, (void *)&idx);
+        st = idx + sub_len;
+    }
+    return ret;
+}
+
+void __s8_replace(s8 *s, char *old, char *new){
+
+}
+
+void __s8_erase(s8 *s, u64 idx, u64 len){
+    u64 copy_st = idx + len;
+    u64 copy_len = s->len - copy_st;
+    memcpy(s->str + idx, s->str + copy_st, copy_len);
+    s->str[idx + copy_len] = '\0';
+    s->len -= len;
+    s->size -= len;
 }
