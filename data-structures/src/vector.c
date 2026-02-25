@@ -14,23 +14,23 @@
 void *__init_dynamic_array(u64 size);
 i32 __update_element(vector *vec, u64 idx, void *val);
 
-u8 __is_initialized(vector *vec){
+static u8 __is_initialized(vector *vec){
     return vec != NULL && vec->data != NULL;
 }
 
-u8 __valid_index(vector *vec, u64 idx){
+static u8 __valid_index(vector *vec, u64 idx){
     return idx < vec->size;
 }
 
-u8 __valid_ptr(void *val){
+static u8 __valid_ptr(void *val){
     return val != NULL;
 }
 
-u8 __should_grow(vector *vec){
+static u8 __should_grow(vector *vec){
     return vec->size >= vec->capacity;
 }
 
-i32 __adjust_capacity(vector *vec){
+static i32 __adjust_capacity(vector *vec){
     assert(__is_initialized(vec));
 
     if(!__is_initialized(vec)){ return VECTOR_FAILURE; }
