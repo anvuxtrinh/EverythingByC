@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /*Integer define*/
@@ -9,5 +10,6 @@ typedef uint8_t     u8;
 typedef int64_t     i64;
 typedef int32_t     i32;
 typedef int8_t      i8;
+typedef bool        b8;
 
 
