@@ -1,10 +1,12 @@
  #pragma once
 
 #include <stdio.h>
+
+#include "vector.h"
 #include "typedef.h"
 
 #ifndef S8_SUCCESS
-#define S8_SUCCES 1
+#define S8_SUCCESS 1
 #endif
 
 #ifndef S8_FAILURE
@@ -59,4 +61,7 @@ u64 __s8_len(s8 *s);
 u8 *__s8_at(s8 *s, u64 idx);
 char __s8_char(s8 *s, u64 idx);
 void __s8_destroy(s8 *s);
-s8 __s8_substr(s8 *s, u64 st, u64 en);
+u8 __s8_substr(s8 *sub, s8 *src, u64 st, u64 en);
+u8 __s8_append(s8 *s, s8 *value);
+u8 __s8_append_char(s8 *s, char c);
+u8 __s8_split(vector *sub, s8 *s, char seperator);
