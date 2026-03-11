@@ -1,50 +1,127 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <unistd.h>
-#include <string.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
-
+#include <unistd.h>
+#include <string.h>
 #include "typedef.h"
-#include "vector.h"
-#include "string8.h"
 
-#define INPUT_MAX_LEN 255
-#define PATH_MAX 1024
+#define PATH_NO_MAX           15
+#define COMMAND_BUFFER_MAX    255
+#define PATH_BUFFER_MAX       255
 
-vector split(s8 *str, const char splited){
-  char c; 
-  u64 idx = 0;
-  i64 prev = -1;
-  u64 len = s8_len(str);
-  vector ret = vector_create(s8, 0, NULL);
-  while(idx < len){
-    char c = s8_char(str, idx);
-    if(c == splited || c == '\0'){
-      s8 sub = s8_substr(str, prev+1, idx);
-      vector_append(&ret, &sub);
+typedef enum {
+  E_SUCESS = 0,
+  E_INPUT_TOO_LONG,
+  E_EOF
+} ErrorCode;
 
-      if(c == '\0'){
-        break;
-      }
-      prev = idx;
+typedef struct {
+  char *name;
+  void (*handler)(i32 argc, char *argv[]);
+} Buildin;
+
+static void buildin_type(i32 argc, char *argv[]);
+static void buildin_pwd(i32 argc, char *argv[]);
+static void buildin_echo(i32 argc, char *argv[]);
+static void buildin_cd(i32 argc, char *argv[]);
+static void buildin_exit(i32 argc, char *argv[]);
+
+static u32 string_length(const char *s){
+  u32 idx = 0;
+  while(s[idx] != '\0'){
+    ++idx;
+  }
+  return idx;
+}
+
+static i32 string_compare(const char *s1, const char *s2){
+  i32 ret = 0;
+  i32 idx = 0;
+  while(s1[idx] == s2[idx]){
+    if(s1[idx] == '\0' || s2[idx] == '\0'){
+      break;
     }
     ++idx;
   }
+  ret = s1[idx] - s2[idx];
   return ret;
 }
 
-b8 path_of_command(s8 *poc, s8 *cmd){
-  const char *env_var_val = getenv("PATH");
-  s8 paths_str = s8_create(env_var_val, strlen(env_var_val));
-  vector paths = split(&paths_str, ':');
-  for(int i = 0; i < vector_size(&paths); ++i){
-    s8 *p = vector_at(s8, &paths, i);
+static char *string_concate(char *dest, char *src){
+  u32 dest_len = string_length(dest);
+  u32 src_len = string_length(src);
 
-    DIR *dirp = opendir(p->str);
+  memcpy(dest + dest_len, src, src_len);
+  return dest;
+}
+
+i32 find_buildin_index(char *command_name);
+
+b8          is_running = true;
+b8          is_redirect = false;
+b8          is_redirect_append = false;
+char       *prompt = "$ ";
+char       *redirect_to;
+char       *redirect_from;
+char        command[COMMAND_BUFFER_MAX];
+char       *arguments[COMMAND_BUFFER_MAX];
+ErrorCode   error_code = E_SUCESS;
+
+Buildin buildin_commands[] = {
+  {.name = "type", .handler = buildin_type},
+  {.name = "pwd", .handler = buildin_pwd},
+  {.name = "cd", .handler = buildin_cd},
+  {.name = "echo", .handler = buildin_echo},
+  {.name = "exit", .handler = buildin_exit}
+};
+
+void end_program(void){
+  is_running = false;
+}
+
+static i32 split(char *str, u32 len, char split_char, char *strlist[]){
+  char c;
+  u32 strno = 0;
+  u32 idx = 0;
+  while((c = str[idx]) != '\n' && c != '\0'){
+    if(idx > len){
+      return -1;
+    }
+    if(c == split_char){
+      str[idx] = '\0';
+    }else {
+      if(strno == 0 || str[idx-1] == '\0'){
+        strlist[strno++] = str + idx;
+      }
+    }
+    ++idx;
+  }
+  return strno;
+}
+
+static i32 search_program(char *program, u32 size1, char *entered_command, u32 size2){
+  char *path_list[PATH_NO_MAX];
+  const char *env_paths = getenv("PATH");
+  u32 env_paths_len = string_length(env_paths);
+  char env_paths_clone[env_paths_len+1];
+
+  memset(env_paths_clone, 0x00, env_paths_len+1);
+  memcpy(env_paths_clone, env_paths, env_paths_len);
+
+  i32 ret = split(env_paths_clone, env_paths_len, ':', path_list);
+  if(ret < 1){
+    return ret;
+  }
+
+  for(i32 i = 0; i < ret; ++i){
+    DIR *dirp = opendir(path_list[i]);
     if(dirp == NULL){
-      return false;
+      return -1;
     }
     for(;;){
       struct dirent *dp = readdir(dirp);
@@ -52,140 +129,354 @@ b8 path_of_command(s8 *poc, s8 *cmd){
         break;
       }
 
-      if(strcmp(dp->d_name, cmd->str) != 0){
+      if(string_compare(dp->d_name, entered_command) != 0){
         continue;
       }
 
       struct stat sb;
-      s8_append(p, '/');
-      s8 path = s8_strcat(p, cmd);
-      if(stat(path.str, &sb) == -1){
+      char path[PATH_BUFFER_MAX];
+      u32 path_len = string_length(path_list[i]);
+      u32 cmd_len = string_length(entered_command);
+
+      memset(path, 0x00, PATH_BUFFER_MAX);
+
+      if(path_len + cmd_len >= PATH_BUFFER_MAX - 2){
+        error_code = E_INPUT_TOO_LONG;
+        return -1;
+      }
+      
+      memcpy(path, path_list[i], path_len);
+      path[path_len] = '/';
+      memcpy(path + path_len + 1, entered_command, cmd_len);
+
+      if(stat(path, &sb) == -1){
         continue;
       }
       if(S_ISREG(sb.st_mode) && (sb.st_mode & 0x49) == 0x49){
-        memcpy(poc, &path, sizeof(s8));
-        break;
+        memcpy(program, path, MIN(size1, PATH_BUFFER_MAX));
+        return 1;
       }
     }
-    closedir(dirp);
-    if(s8_len(poc) > 0){
-      return true;
-    }
   }
-  return false;
-}
-void type_cb(vector *components){
-  s8 *cmd = vector_at(s8, components, 1);
-  s8 poc = {
-    .len = 0,
-    .size = 0,
-    .capacity = 0
-  }; //path of command
-
-  if(!strcmp(s8_string(cmd), "echo")){
-    printf("echo is a shell builtin\n");
-  }else if(!strcmp(s8_string(cmd), "type")){
-    printf("type is a shell builtin\n");
-  }else if(!strcmp(s8_string(cmd), "exit")){
-    printf("exit is a shell builtin\n");
-  }else if(!strcmp(s8_string(cmd), "pwd")){
-    printf("pwd is a shell builtin\n");
-  }else if(path_of_command(&poc, cmd)){
-    printf("%s is %s\n", cmd->str, poc.str);
-  }else{
-    printf("%s: not found\n", s8_string(cmd));
-  }
+  return -1;
 }
 
-void echo_cb(vector *components){
-  for(u64 i = 1; i < vector_size(components); ++i){
-    s8 *s = vector_at(s8, components, i);
-    printf("%s ", s8_string(s));
-  }
-  printf("\n");
+static void buildin_exit(i32 argc, char *argv[]){
+  end_program();
 }
 
-void pwd_cb(vector *components){
-  char cwd[PATH_MAX];
-  getcwd(cwd, PATH_MAX);
+static void buildin_type(i32 argc, char *argv[]){
+  char *buildin_command = argv[1];
+  i32 buildin_idx = find_buildin_index(buildin_command);
+  if(buildin_idx >= 0){
+    printf("%s is a shell builtin\n", buildin_command);
+    return;
+  }
+  char program[PATH_BUFFER_MAX];
+  if(search_program(program, PATH_BUFFER_MAX, buildin_command, string_length(buildin_command)) == 1){
+    printf("%s is %s\n", buildin_command, program);
+    return;
+  }
+  printf("%s: not found\n", buildin_command);
+}
+
+static void buildin_pwd(i32 argc, char *argv[]){
+  char cwd[PATH_BUFFER_MAX];
+  getcwd(cwd, PATH_BUFFER_MAX);
   printf("%s\n", cwd);
 }
 
-void cd_cb(vector *components){
-  s8 dict;
-  s8 *argv = vector_at(s8, components, 1);
-  if(s8_char(argv, 0) == '~'){
-    s8_erase(argv, 0, 1);
-    const char *env_var_val = getenv("HOME");
-    s8 home_path = s8_create(env_var_val, strlen(env_var_val));
-    dict = s8_strcat(&home_path, argv);
-    s8_destroy(&home_path);
-  }else{
-    dict = *argv;
+static char *get_parent_dir(char *parent, char *path){
+  u32 path_len = string_length(path);
+  u32 idx = path_len-1;
+  if(path_len < 1){
+    return NULL;
   }
-  i64 ret = chdir(dict.str);
+
+  while(path[idx] != '/' && idx > 0){
+    --idx;
+  }
+
+  if(idx > 0){
+    memcpy(parent, path, idx);
+  }
+  return parent;
+}
+
+static void prepare_directory(char *dest){
+  char parent_dir[PATH_BUFFER_MAX];
+  memset(parent_dir, 0x00, PATH_BUFFER_MAX);
+  get_parent_dir(parent_dir, dest);
+  i32 fd = open(parent_dir, O_RDONLY | O_DIRECTORY);
+  if(fd == -1){
+    mkdir(parent_dir, 0700);
+  }else{
+    close(fd);
+  }
+}
+
+static void buildin_echo(i32 argc, char *argv[]){
+  u32 content_len = 0;
+  b8 is_content = true;
+  char content[COMMAND_BUFFER_MAX];
+  u32 path_len = 0;
+  char path[PATH_BUFFER_MAX];
+
+  memset(content, 0x00, COMMAND_BUFFER_MAX);
+  memset(path, 0x00, PATH_BUFFER_MAX);
+
+  for(i32 i = 1; i < argc; ++i){
+    string_concate(content, argv[i]);
+    content_len = string_length(content);
+    content[content_len] = ' ';
+  }
+
+  content[content_len] = '\n';
+  ++content_len;
+  
+  if(redirect_to != NULL && redirect_from == NULL && string_length(redirect_to) > 0){
+    prepare_directory(redirect_to);
+    i32 fd;
+    if(is_redirect_append){
+      fd = open(redirect_to, O_WRONLY | O_CREAT | O_APPEND, 0700);
+    }else{
+      fd = open(redirect_to, O_WRONLY | O_CREAT, 0700);
+    }
+    write(fd, content, content_len);
+    close(fd);
+    return;
+  }
+  write(STDOUT_FILENO, content, content_len);
+}
+
+static void preprocess(char *cleaned_dir, char *entered_dir){
+  u32 offset = 0;
+  u32 min_len = 0;
+  char *copy_pos = entered_dir;
+  if(copy_pos[0] == '~'){
+    const char *home_dir = getenv("HOME");
+    min_len = MIN(PATH_BUFFER_MAX-1, string_length(home_dir));
+    memcpy(cleaned_dir, home_dir, min_len);
+    offset = min_len;
+    ++copy_pos;
+  }
+  min_len = MIN(PATH_BUFFER_MAX-1, string_length(entered_dir) + offset);
+  memcpy(cleaned_dir + offset, copy_pos, min_len);
+  cleaned_dir[min_len] = '\0';
+}
+
+static void buildin_cd(i32 argc, char *argv[]){
+  char *entered_dir = argv[1];
+  char cleaned_dir[PATH_BUFFER_MAX];
+
+  preprocess(cleaned_dir, entered_dir);
+  i64 ret = chdir(cleaned_dir);
   if(ret < 0){
     if(errno == ENOENT){
-      printf("cd: %s: No such file or directory\n", s8_string(&dict));
+      printf("cd: %s: No such file or directory\n", cleaned_dir);
     }
   }
 }
 
-void (*cmd_lookup(s8 *s))(vector *components) {
-  if(!strcmp(s8_string(s), "echo")){
-    return &echo_cb;
-  }
-  if(!strcmp(s8_string(s), "type")){
-    return &type_cb;
-  }
-  if(!strcmp(s8_string(s), "pwd")){
-    return &pwd_cb;
-  }
-  if(!strcmp(s8_string(s), "cd")){
-    return &cd_cb;
-  }
-  return NULL;
+static void drain_stdin(void){
+  i32 c;
+  while((c = getchar()) != '\n' && c != EOF)
+    ;
 }
 
-void cleanup(vector *vec_s8, s8 *s){
-  for(u64 i = 0; i < vector_size(vec_s8); ++i){
-    s8 *s = vector_at(s8, vec_s8, i);
-    s8_destroy(s);
-  }
-  vector_destroy(vec_s8);
-  s8_destroy(s);
-}
+i32 read_command(void){
+  i32 c;
+  char in_space = ' ';
+  i32 argc = 0;
+  u32 idx = 0;
+  b8 is_quotes = false;
+  b8 is_double_quotes = false;
+  b8 is_backslash = false;
 
-void doREPL(){
-  char user_input[INPUT_MAX_LEN];
-  while(1){
-    printf("$ ");
-    fgets(user_input, INPUT_MAX_LEN, stdin);
-    user_input[strcspn(user_input, "\n")] = '\0';
+  memset(command, 0x00, sizeof(command));
+  memset(arguments, 0x00, sizeof(arguments));
+  write(STDIN_FILENO, "Hell", sizeof("Hell"));
+  while((c = getchar()) != '\n'){
+    if(c == EOF){
+      error_code = E_EOF;
+      return -1;
+    }
 
-    s8 input_str = s8_create(user_input, INPUT_MAX_LEN);
-    vector components = split(&input_str, ' ');
-    if(vector_size(&components) == 0){
-      cleanup(&components, &input_str);
+    if(c == '\t'){
+      printf("Hello Tab\n");
+    }
+
+    if(idx >= COMMAND_BUFFER_MAX - 1){
+      error_code = E_INPUT_TOO_LONG;
+      return -1;
+    }
+
+    if(is_backslash){
+      command[idx++] = (char) c;
+      is_backslash = false;
       continue;
     }
 
-    s8 *cmd = vector_at(s8, &components, 0);
-    if(!strcmp(s8_string(cmd), "exit")){
-      cleanup(&components, &input_str);
-      break;
+    if(c == in_space && is_quotes == false && is_double_quotes == false){
+      command[idx++] = '\0';
+      continue;
     }
 
-    s8 poc;
-    void (*callback)(vector *components) = cmd_lookup(cmd);
-    if(callback){
-      callback(&components);
-    }else if(path_of_command(&poc, cmd)){
-      system(user_input);
-    }else{
-      printf("%s: command not found\n", s8_string(cmd));
+    if(c == '\"' && is_quotes == false){
+      is_double_quotes = !is_double_quotes;
+      continue;
     }
-    cleanup(&components, &input_str);
+
+    if(c == '\'' && is_double_quotes == false){
+      is_quotes = !is_quotes;
+      continue;
+    }
+
+    if(c == '>' && is_quotes == false && is_double_quotes == false && is_backslash == false){
+      if(is_redirect){
+        is_redirect_append = true;
+      }else{
+        is_redirect = true;
+        if(idx > 0 && command[idx-1] != '\0'){
+          --argc;
+          redirect_from = arguments[argc];
+          arguments[argc] = NULL;
+        }
+      }
+      command[idx++] = (char) c;
+      continue;
+    }
+  
+    if(argc == 0 || command[idx-1] == '\0'){
+      if(is_redirect){
+        redirect_to = command + idx;
+        is_redirect = false;
+      }else{
+        arguments[argc++] = command + idx;
+      }
+    }
+
+    if(c == '\\' && is_quotes == false){
+      is_backslash = true;
+      continue;
+    }
+
+    command[idx++] = (char) c;
+  }
+
+  return argc;
+}
+
+void handle_error(void){
+  switch (error_code)
+  {
+  case E_INPUT_TOO_LONG:
+    puts("sh: Command too long");
+    drain_stdin();
+    break;
+  
+  case E_EOF:
+    end_program();
+    break;
+  
+  default:
+    break;
+  }
+  error_code = E_SUCESS;
+}
+
+i32 find_buildin_index(char *command_name){
+  for(i32 i = 0; i < sizeof(buildin_commands)/sizeof(Buildin); ++i){
+    if(!string_compare(command_name, buildin_commands[i].name))
+    {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void execute_command(i32 argc, char *argv[]){
+  if(argc < 1){
+    return;
+  }
+
+  i32 redirect_from_int;
+  i32 saved_direct = -1;
+  i32 buildin_idx = find_buildin_index(argv[0]);
+  if(buildin_idx >= 0){
+    i32 fd = -1;
+    if(redirect_from != NULL && redirect_to != NULL){
+      prepare_directory(redirect_to);
+      if(is_redirect_append){
+        fd = open(redirect_to, O_WRONLY | O_CREAT | O_APPEND, 0700);
+      }else{
+        fd = open(redirect_to, O_WRONLY | O_CREAT, 0700);
+      }
+      redirect_from_int = redirect_from[0] - '0';
+      saved_direct = dup(redirect_from_int);
+      dup2(fd, redirect_from_int);
+    }
+    buildin_commands[buildin_idx].handler(argc, argv);
+    if(fd > -1){
+      close(fd);
+    }
+    if(saved_direct != -1){
+      dup2(saved_direct, redirect_from_int);
+    }
+    return;
+  }
+
+  char program[PATH_BUFFER_MAX];
+  i32 ret = search_program(program, PATH_BUFFER_MAX, argv[0], string_length(argv[0]));
+  if(program && ret == 1){
+    pid_t pid = fork();
+    if(pid == 0){
+      i32 fd = -1;
+      if(redirect_to != NULL){
+        prepare_directory(redirect_to);
+        if(is_redirect_append){
+          fd = open(redirect_to, O_WRONLY | O_CREAT | O_APPEND, 0700);
+        }else{
+          fd = open(redirect_to, O_WRONLY | O_CREAT, 0700);
+        }
+        redirect_from_int = 1;
+        if(redirect_from != NULL){
+          redirect_from_int = redirect_from[0] - '0';
+        }
+        dup2(fd, redirect_from_int);
+      }
+      exit(execv(program, arguments));
+      if(fd > -1){
+        close(fd);
+      }
+    }else{
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }else{
+    printf("%s: command not found\n", argv[0]);
+  }
+}
+
+void handle_command(void){
+  char c;
+  printf("$ ");
+  i32 argc = read_command();
+  if(argc <= 0){
+    handle_error();
+    return;
+  }
+
+  execute_command(argc, arguments);
+  redirect_to = NULL;
+  redirect_from = NULL;
+  is_redirect = false;
+  is_redirect_append = false;
+}
+
+void doREPL(void){
+  while(is_running){
+    handle_command();    
   }
 }
 
