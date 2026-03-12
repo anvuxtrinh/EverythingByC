@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <termios.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -284,6 +285,46 @@ static void drain_stdin(void){
     ;
 }
 
+string_match(char *s1, char *s2, u32 length){
+  for(u32 i = 0; i < length; ++i){
+    if(s1[i] != s2[i]){
+      return false;
+    }
+  }
+  return true;
+}
+
+i32 find_matching_command(char *suggestions[], char *input, u32 length){
+  i32 match_count = 0;
+  for(i32 i = 0; i < sizeof(buildin_commands)/sizeof(Buildin); ++i){
+    if(string_match(buildin_commands[i].name, input, length)){
+      suggestions[match_count++] = buildin_commands[i].name;
+    }
+  }
+  return match_count;
+}
+
+void suggest_command(char *input, u32 length){
+  char *suggestions[sizeof(buildin_commands)/sizeof(Buildin)];
+
+  i32 match_count = find_matching_command(suggestions, input, length);
+
+  if(match_count == 0){
+    return;
+  }
+
+  if(match_count == 1){
+    printf("\r\033[K%s%s", prompt, suggestions[0]);
+    return;
+  }else{
+    printf("\n");
+    for(i32 i = 0; i < match_count; ++i){
+      printf("%s\n", suggestions[i]);
+    }
+    printf("\r\033[K%s%s", prompt, input);
+  }
+}
+
 i32 read_command(void){
   i32 c;
   char in_space = ' ';
@@ -295,7 +336,6 @@ i32 read_command(void){
 
   memset(command, 0x00, sizeof(command));
   memset(arguments, 0x00, sizeof(arguments));
-  write(STDIN_FILENO, "Hell", sizeof("Hell"));
   while((c = getchar()) != '\n'){
     if(c == EOF){
       error_code = E_EOF;
@@ -303,7 +343,8 @@ i32 read_command(void){
     }
 
     if(c == '\t'){
-      printf("Hello Tab\n");
+      suggest_command(command, idx);
+      continue;
     }
 
     if(idx >= COMMAND_BUFFER_MAX - 1){
@@ -460,7 +501,7 @@ void execute_command(i32 argc, char *argv[]){
 
 void handle_command(void){
   char c;
-  printf("$ ");
+  printf("%s ", prompt);
   i32 argc = read_command();
   if(argc <= 0){
     handle_error();
@@ -475,9 +516,15 @@ void handle_command(void){
 }
 
 void doREPL(void){
+  struct termios tp;
+  tcgetattr(STDIN_FILENO, &tp);
+  struct termios tp_old = tp;
+  tp.c_lflag &= ~ICANON;
+  tcsetattr(STDIN_FILENO, TCSANOW, &tp);
   while(is_running){
     handle_command();    
   }
+  tcsetattr(STDIN_FILENO, TCSANOW, &tp_old);
 }
 
 int main(int argc, char *argv[]) {
